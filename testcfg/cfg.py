@@ -665,19 +665,22 @@ class ContextFreeGrammar:
 
         :return: None
         """
-        new_prods = list(self.productions)
-        for prod1 in new_prods:
-            if self.is_lexical_rule(prod1):
-                new_prods.remove(prod1)
-                nt = prod1[0]
-                t = prod1[1][0]
+        lexical_rules = {}
+        for prod in self.productions:
+            if self.is_lexical_rule(prod):
+                lexical_rules[prod[0]] = prod[1][0]
 
-                for prod2 in new_prods:
-                    for i in range(len(prod2[1])):
-                        if prod2[1][i] == nt:
-                            rhs_copy = list(prod2[1])
-                            rhs_copy[i] = t
-                            new_prods.append((prod2[0], tuple(rhs_copy)))
+        for lhs in lexical_rules.keys():
+            self.productions.remove((lhs, (lexical_rules[lhs],)))
+
+        new_prods = list(self.productions)
+        lexical_nts = lexical_rules.keys()
+        for prod in new_prods:
+            for i in range(len(prod[1])):
+                if prod[1][i] in lexical_nts:
+                    rhs_copy = list(prod[1])
+                    rhs_copy[i] = lexical_rules[prod[1][i]]
+                    new_prods.append((prod[0], tuple(rhs_copy)))
 
         self.productions = set(new_prods)
 
