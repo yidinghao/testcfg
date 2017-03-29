@@ -52,7 +52,7 @@ for lprod in xrange(25, 301, 25):
         no_error = False
         while not no_error:
             no_error = True
-            grammar = factory.make_grammar()
+            grammar = factory.make_grammar(trim=False)
 
             # Display information about the experiment.
             trial_heading = "Grammar " + str(i + 1) + ": "
