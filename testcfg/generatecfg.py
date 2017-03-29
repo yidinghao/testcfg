@@ -40,49 +40,81 @@ class CfgStore:
 
 class CnfFactory:
     """
-    Class for generating CFGs in CNF.
-
-    Very naive. No attempt to make them reasonable.
+    Code for generating CFGs in Chomsky Normal Form.
     """
 
-    def __init__(self):
+    def __init__(self, unique_lexicon=False):
+        """
+        Constructor for CnfFactory.
+        
+        :type unique_lexicon: bool
+        :param unique_lexicon: If True, each nonterminal will correspond
+            to a single distinct terminal.
+        """
         self.number_nonterminals = 1
         self.number_terminals = 2
         self.number_binary_productions = 1
         self.number_lexical_productions = 1
         self.nonterminals = []
         self.terminals = []
-        # unique lexicon gives each nonterminal a single distinct terminal
-        self.unique_lexicon = False
+        self.unique_lexicon = unique_lexicon
 
     def make_uprod(self):
+        """
+        Creates a random production of the form A -> a, 
+        where a is a terminal.
+        
+        :rtype: tuple
+        :return: A random production.
+        """
         rhs = random.choice(self.terminals)
         lhs = random.choice(self.nonterminals)
         return (lhs, (rhs,))
 
     def make_bprod(self):
+        """
+        Creates a random production of the form A -> B C,
+        where B and C are nonterminals.
+        
+        :rtype: tuple
+        :return: A random production.
+        """
         rhs1 = random.choice(self.nonterminals)
         rhs2 = random.choice(self.nonterminals)
         lhs = random.choice(self.nonterminals)
         return (lhs, (rhs1, rhs2))
 
-    def make_grammar(self):
+    def make_grammar(self, trim=True, remove_lexical_rules=False):
         """
-        return a new grammar. that is trim.
+        Creates a random CNF CFG.
+        
+        :type trim: bool
+        :param trim: If True, the grammar returned will be trim.
+        
+        :type remove_lexical_rules: bool
+        :param remove_lexical_rules: If True, lexical rules will be
+            removed from the grammar.
+        
+        :rtype: cfg.ContextFreeGrammar
+        :return: A random CNF CFG.
         """
+        if 1. * self.number_binary_productions > (self.number_nonterminals ** 3) * 0.9:
+            raise ValueError()
+        if 1. * self.number_lexical_productions > (self.number_nonterminals * self.number_terminals) * 0.9:
+            raise ValueError()
+
+        # Create the terminals and nonterminals.
         self.terminals = list(dictionary.generateDictionary(self.number_terminals))
         self.nonterminals = ["S"]
         for j in xrange(self.number_nonterminals - 1):
             nt = "NT" + str(j)
             self.nonterminals.append(nt)
-        bprods = set()
-        if self.number_binary_productions > (self.number_nonterminals ** 3) * 0.9:
-            raise ValueError()
-        if self.number_lexical_productions > (self.number_nonterminals * self.number_terminals) * 0.9:
-            raise ValueError()
 
+        # Create the productions.
+        bprods = set()
         while len(bprods) < self.number_binary_productions:
             bprods.add(self.make_bprod())
+
         uprods = set()
         if self.unique_lexicon:
             if len(self.terminals) < len(self.nonterminals):
@@ -96,16 +128,21 @@ class CnfFactory:
             while len(uprods) < self.number_lexical_productions:
                 uprods.add(self.make_uprod())
 
-        ## now return the grammar.
+        # Create the grammar.
         for p in uprods:
             bprods.add(p)
         grammar = cfg.ContextFreeGrammar()
         grammar.terminals = set(self.terminals)
         grammar.nonterminals = set(self.nonterminals)
         grammar.productions = bprods
-        grammar.start_set = set(["S"])
-        grammar.remove_lexical_rules()  # added by yiding
-        return grammar.trim()
+        grammar.start_set = {"S"}
+
+        if remove_lexical_rules:
+            grammar.remove_lexical_rules()
+        if trim:
+            grammar.trim()
+
+        return grammar
 
 
 class CfgFactory:
